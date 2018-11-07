@@ -122,12 +122,10 @@ public class Address {
 
 ```java
 
-
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.springframework.util.StringUtils;
 
-import java.io.UnsupportedEncodingException;
 import java.lang.reflect.*;
 import java.util.*;
 
@@ -180,14 +178,19 @@ public class MapBeanUtil<T> {
     private Map<String, Field> getFiledMap(Class<?> cls) {
         if (!cacheFieldMap.containsKey(cls)) {
             Map<String, Field> fieldMap = new HashMap<String, Field>();
-            if (cls != null) {
-                Field[] fileds = cls.getDeclaredFields();
-                for (Field field : fileds) {
-                    String fieldName = field.getName();
-                    fieldMap.put(fieldName, field);
+            Class tempCls = cls;
+            while (tempCls.getSuperclass() != null && !tempCls.getName().toLowerCase().equals("java.lang.object")) {
+                if (tempCls != null) {
+                    Field[] fileds = tempCls.getDeclaredFields();
+                    for (Field field : fileds) {
+                        String fieldName = field.getName();
+                        fieldMap.put(fieldName, field);
+                    }
+
                 }
-                cacheFieldMap.put(cls, fieldMap);
+                tempCls = tempCls.getSuperclass();
             }
+            cacheFieldMap.put(cls, fieldMap);
         }
         return cacheFieldMap.get(cls);
     }
@@ -260,6 +263,11 @@ public class MapBeanUtil<T> {
                 method.invoke(object, parseObject.getSqlDate(key));
             }
             if (type == Date.class) {
+                String date = parseObject.getString(key);
+                if (date.matches("[\\d]{4}-[\\d]{2}")) {
+                    date = date + "-01";
+                    parseObject.put(key, date);
+                }
                 method.invoke(object, parseObject.getDate(key));
             }
             if (type == Double.class) {
@@ -616,7 +624,7 @@ public class MapBeanUtil<T> {
                         }
                     }
                     // array  -> list  & Array
-                    if (isArray) {
+                    else if (isArray) {
                         Integer arrayIndex = null;
                         keyName = RegexUtil.fetchDataFromDocumentText(keyMember, "(\\S+)\\[(\\d+)\\]", 1);
                         arrayIndex = Integer.parseInt(RegexUtil.fetchDataFromDocumentText(keyMember, "(\\S+)\\[(\\d+)\\]", 2));
@@ -642,7 +650,7 @@ public class MapBeanUtil<T> {
                             }
                         }
                         // Array Type
-                        if (field.getType().isArray()) {
+                        else if (field.getType().isArray()) {
                             Object array = getterMethod.invoke(target);
                             if (array == null) {
                                 throw new NullPointerException(" array is null");
@@ -652,7 +660,16 @@ public class MapBeanUtil<T> {
                                 throw new IndexOutOfBoundsException("no such index array");
                             }
                         }
+                    } else {
+                        Field field = getFieldFromMap(fieldMap, keyName);
+                        if (field == null)
+                            throw new NoSuchFieldException("key:" + key + " no such field " + " :" + keyName);
+                        Method getterMethod = getGetterMethodFromMap(getterMethodMap, keyName);
+                        if (getterMethod == null)
+                            throw new NoSuchMethodException("no such method");
+                        target = getterMethod.invoke(target);
                     }
+
                     fieldMap = getFiledMap(target.getClass());
                     setterMethodMap = getSetterMethod(target.getClass());
                     getterMethodMap = getGetterMethod(target.getClass());
@@ -704,4 +721,129 @@ public class MapBeanUtil<T> {
     }
 }
 
+
+
+```
+
+```java
+public class CommonUtilTest {
+    private Map<String, Object> input = new HashMap<>();
+
+    @Test
+    public void toMap() throws IOException {
+        String source = "{\n" +
+                "    \"personalInfo\": {\n" +
+                "        \"fullName\": \"马苗苗\",\n" +
+                "        \"gender\": \"female\",\n" +
+                "        \"birthDate\": \"1992-10-01\",\n" +
+                "        \"houseHoldRegistration\": \"乌兰察布\",\n" +
+                "        \"residence\": \"北京\",\n" +
+                "        \"email\": \"15801098596@163.com\",\n" +
+                "        \"mobile\": \"15801098596\",\n" +
+                "        \"nationality\": \"中国\",\n" +
+                "        \"ethnicity\": \"汉\"\n" +
+                "    },\n" +
+                "    \"expectedJob\": {\n" +
+                "        \"location\": \"北京\",\n" +
+                "        \"totalPackage\": \"8001-10000元/月\",\n" +
+                "        \"jobType\": \"fullTime\",\n" +
+                "        \"profession\": \"市场主管、市场营销主管、市场文案策划\",\n" +
+                "        \"industry\": \"医疗设备/器械、医疗/护理/美容/保健/卫生服务、医药/生物工程\"\n" +
+                "    },\n" +
+                "    \"educationInfo\": [\n" +
+                "        {\n" +
+                "            \"highestDegree\": \"master\",\n" +
+                "            \"startDate\": \"2014-09\",\n" +
+                "            \"endDate\": \"2017-06\",\n" +
+                "            \"college\": \"北京化工大学\",\n" +
+                "            \"major\": \"制药工程\"\n" +
+                "        },\n" +
+                "        {\n" +
+                "            \"highestDegree\": \"bachelor\",\n" +
+                "            \"startDate\": \"2010-09\",\n" +
+                "            \"endDate\": \"2014-06\",\n" +
+                "            \"college\": \"北京化工大学\",\n" +
+                "            \"major\": \"制药工程\"\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"careerInfo\": [\n" +
+                "        {\n" +
+                "            \"aboutOrganization\": \"合资\",\n" +
+                "            \"startDate\": \"2017-05\",\n" +
+                "            \"summary\": \"1. 公众号运营：包括日常发稿、运维、广告投放收益等。 运营公司公众号期间，粉丝增长7K+，最高阅读量2W+ （粉丝数5W+） 2. 活动执行：包括活动前准备工作 （方案策划、项目预算、人员安排及相关事项对接），活动过程中现场后勤及活动结束后的收尾工作。 2017年昆明国际旅游交易参展会体育馆展： 主办方为云南省旅发委，会议规模约1万人，公司参与展位108m ，展期三天，成功展示公司强大的救援能力及服务平台，并与云南省旅发委签订战略协议，为公司在云南渠道铺设打下坚实基础。 2017年公司年会筹划：参与人数约为500人，主要负责现场微信上墙互动、节目评选及抽奖娱乐环节，圆满完成工作。 2018年公司与马鞍山市民卡公司共同举办的“健康中国行“活动，规模约200人，主负责活动方案策划、预算评估及新闻稿修饰，保证活动顺利进行和后期宣传。 3. 公司线上宣传：包括各类媒体信息搜集和对接。 主要完成官网百度及360认证、品牌商标注册。 4. 规范撰写：包括市场部公众号文章发布及线上OA审文、活动落地执行、内部管理规范等。规范经审核后全员发送，确保后续工作进行以规范内容为准。\"\n" +
+                "        }\n" +
+                "    ],\n" +
+                "    \"projectInfo\": [],\n" +
+                "    \"languageSkill\": [],\n" +
+                "    \"certificates\": [],\n" +
+                "    \"honors\": [],\n" +
+                "    \"patents\": [],\n" +
+                "    \"papers\": [],\n" +
+                "    \"books\": [],\n" +
+                "    \"candidateId\": \"Xa9M7GYBpaluvtCwBCL1\",\n" +
+                "    \"name\": \"智联招聘_马苗苗_中文_20180605_1528181385912.doc\",\n" +
+                "    \"language\": \"SimplifiedChinese\",\n" +
+                "    \"aboutSelf\": \"综合能力：做事情执行力强，有较强的 人际交流和学习的能力 做事风格：做事直接，目的导向性强 个人性格：乐观开朗，热情友善 来电测试\\n \",\n" +
+                "    \"workingStatus\": null,\n" +
+                "    \"tags\": [],\n" +
+                "    \"id\": \"Xq9M7GYBpaluvtCwBSI-\",\n" +
+                "    \"certificates\": [\n" +
+                "        {\n" +
+                "            \"name\": \"大学英语六级\",\n" +
+                "            \"date\": \"2013-12\"\n" +
+                "        }\n" +
+                "    ]\n" +
+                "}";
+
+        ObjectMapper mapper = new ObjectMapper();
+        HashMap<String, Object> result = mapper.readValue(source, HashMap.class);
+        travelMap("", result);
+
+        Resume resume =  mapper.readValue(source, Resume.class);
+        MapBeanUtil<Resume> beanUtil = new MapBeanUtil<>();
+        beanUtil.doUpdate(input, resume);
+        assertNotNull(resume);
+    }
+
+    private void travelMap(String path, Map<String, Object> object) {
+        for (Map.Entry<String, Object> e: object.entrySet()) {
+            String thisPath;
+            String key = e.getKey();
+            if (path.length() == 0) {
+                thisPath = key;
+            } else {
+                thisPath = path + "." + key;
+            }
+            Object value = e.getValue();
+            if (value instanceof Map) {
+                travelMap(thisPath, (Map<String, Object>) value);
+            } else if (value instanceof List) {
+                travelList(thisPath, (List<Object>)value);
+            } else {
+                travelValue(thisPath, value);
+            }
+        }
+    }
+
+    private void travelList(String path, List<Object> object) {
+        int i = 0;
+
+        for (Object o: object) {
+            String cur = String.format("%s[%d]", path, i);
+            if (o instanceof Map) {
+                travelMap(cur, (Map<String, Object>) o);
+            } else if (o instanceof List) {
+                travelList(cur, (List<Object>)o);
+            } else {
+                travelValue(cur, o);
+            }
+            ++i;
+        }
+    }
+
+    private void travelValue(String path, Object object) {
+        String result = String.format("%s = %s", path, object == null? null : object.toString());
+        System.out.println(result);
+        input.put(path, object);
+    }
 ```
