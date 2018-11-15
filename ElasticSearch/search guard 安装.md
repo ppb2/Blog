@@ -258,11 +258,11 @@ bin/elasticsearch-plugin install -b file:../search-guard-6-6.3.2-23.0.zip
         searchguard.ssl.http.pemkey_password: ********
         searchguard.ssl.http.pemtrustedcas_filepath: root-ca.pem
         searchguard.nodes_dn:
-            - CN=node-01.credithc.com,OU=Ops,O=credithc Com\, Inc.,DC=credithc,DC=com
-            - CN=node-02.credithc.com,OU=Ops,O=credithc Com\, Inc.,DC=credithc,DC=com
-            - CN=node-03.credithc.com,OU=Ops,O=credithc Com\, Inc.,DC=credithc,DC=com
+            - CN=node-01.xxx.com,OU=Ops,O=xxx Com\, Inc.,DC=xxx,DC=com
+            - CN=node-02.xxx.com,OU=Ops,O=xxx Com\, Inc.,DC=xxx,DC=com
+            - CN=node-03.xxx.com,OU=Ops,O=xxx Com\, Inc.,DC=xxx,DC=com
         searchguard.authcz.admin_dn:
-            - CN=ppb.credithc.com,OU=Ops,O=credithc Com\, Inc.,DC=credithc,DC=com
+            - CN=ppb.xxx.com,OU=Ops,O=xxx Com\, Inc.,DC=xxx,DC=com
         searchguard.allow_unsafe_democertificates: true
         xpack.security.enabled: false
         searchguard.enterprise_modules_enabled: false
