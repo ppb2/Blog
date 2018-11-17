@@ -1,6 +1,11 @@
-![image](/uploads/727c14112242524e7243dc6fb4579d42/image.png)
+## 中控服务器
+
+![logo](./订阅号.png)
 
 ### 架构设计
+
+
+![架构设计图](http://mmbiz.qpic.cn/mmbiz_png/PiajxSqBRaEIQxibpLbyuSK9XkjDgZoL0xnC7SUbrIRwI8NhEGFeax6HoPcTMDqKGYxaSoNqBwocrj70Pt1EcKnQ/0?wx_fmt=png)
 
   主要有三个部分：负责业务逻辑部分的服务器，负责对接微信API的API-Proxy服务器，以及唯一的AccessToken中控服务器
 
