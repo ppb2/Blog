@@ -60,6 +60,7 @@ entityRepository.save(entity)
 ##### 版本冲突会发生什么？
 
 ```java
+org.elasticsearch.index.engine.VersionConflictEngineException
 version conflict, current version [1] is higher or equal to the one provided [1]
 ```
 
