@@ -1,5 +1,9 @@
 ### Full Text Query
 
+#### Ik中文分词器安装
+
+[ik中文分词器安装](https://github.com/medcl/elasticsearch-analysis-ik)
+
 #### match_phrase query
 
 ##### 简单查询
